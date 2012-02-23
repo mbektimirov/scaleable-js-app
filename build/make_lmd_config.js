@@ -72,16 +72,40 @@ var collect = function (what, is_json) {
 
     appConfig.modules.forEach(function (moduleName) {
         var file = BASE_DIR + appConfig.path[what] + moduleName + (is_json ? '.json' : '.html');
+        
         try {
             var item = fs.readFileSync(file, 'utf8');
-            items[moduleName] = is_json ? JSON.parse(item) : item;
+            var typedItem = is_json ? JSON.parse(item) : item;
+
+            items[moduleName] = (what == 'descriptor') ? implementInterfaces(typedItem) : typedItem;
         } catch (e) {
-            // ignore if not found
+            // console.log(e);
         }
     });
 
     return JSON.stringify(items);
 };
+
+function implementInterfaces(descriptor) {
+
+    if (!descriptor.implements) {
+        return descriptor;
+    }
+
+    var iRoot = BASE_DIR + appConfig.path['interface'];
+    var interfaces = [].concat(descriptor.implements);
+
+    interfaces.forEach(function (interface) {
+        var iFromFile = fs.readFileSync(iRoot + interface + '.json', 'utf8');
+        var iAcl = JSON.parse(iFromFile).acl || {};
+
+        for (aclType in iAcl) {
+            descriptor.acl[aclType] = (descriptor.acl[aclType] || []).concat(iAcl[aclType]);
+        }
+    });
+
+    return descriptor;
+}
 
 var collectModules = function () {
     fs.writeFileSync(TMP_DIR + 'locales.json', collect('locale', true), 'utf8');
@@ -122,7 +146,7 @@ var collectSandboxedModules = function () {
 var lmd_config = {
     "path": "/",
     "global": "window", // define to be sure
-    "main": "main",
+    "main": "index",
     "modules": collectModules(),
     "sandbox": collectSandboxedModules(),
     "lazy": IS_PRODUCTION,

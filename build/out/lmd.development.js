@@ -48,6 +48,29 @@
         };
     return lmd;
 })(window,{"MessageView":true,"DataGenerator":true,"Logger":true,"Hook":true})({
+"main": /**
+ *
+ * @see articles:
+ *
+ * Andrew Dupont (Gowalla, Prototype.js, S2)
+ * 1. Maintainable JavaScript
+ *    http://channel9.msdn.com/Events/MIX/MIX11/EXT23
+ *
+ * Nicholas Zakas (Yahoo!, YUI, YUI Test)
+ * 2. Writing Maintainable JavaScript
+ *    http://www.yuiblog.com/blog/2007/05/25/video-zakas/
+ * Slides:
+ *    New: http://www.slideshare.net/nzakas/maintainable-javascript-2011
+ *    Old: http://www.slideshare.net/nzakas/maintainable-javascript-1071179
+ *
+ * 3. Scalable JavaScript Application Architecture
+ *    http://developer.yahoo.com/yui/theater/video.php?v=zakas-architecture
+ */
+
+function main(require, exports, module) {
+    "use strict";
+    require('Core').init();
+},
 "Core": function Core(require, exports) {
     "use strict";
 
@@ -218,7 +241,8 @@
     for (var i in coreExports) {
         exports[i] = coreExports[i];
     }
-},
+}
+,
 "Template": function Template() {
     /**
      * Simple JavaScript Templating
@@ -234,7 +258,7 @@
         "var p=[],print=function(){p.push.apply(p,arguments);};" +
 
         // Introduce the data as local variables using with(){}
-        "with(obj){p.push('" +
+        "with(obj || {}){p.push('" +
 
         // Convert the template into pure JavaScript
         String(str)
@@ -364,13 +388,29 @@
      *
      * @returns {Boolean}
      */
-    Sandbox.prototype.is = function (role) {
-        if (arguments.length === 1 && this.descriptor.acl[role]) {
+    Sandbox.prototype.is = function (eventType, event) {
+        var acl = this.descriptor.acl;
+        var typedAcl = (acl[eventType] || []);
+
+        if (acl['*'] || eventWithWildcardMatchesAcl(event, typedAcl)) {
             return true;
         }
-        return Array.prototype.slice(arguments).every($.proxy(function (item) {
-            return this.descriptor.acl[item];
-        }, this));
+        
+        if (typedAcl.indexOf(event) != -1) {
+            return true;
+        }
+
+        function eventWithWildcardMatchesAcl(event, acl) {
+            var eventMatches = acl.filter(function (aclEvent) {
+	            if (aclEvent.indexOf("*") == -1) {
+	            	return false;
+	            }
+	            
+                return event.match(new RegExp(aclEvent));
+            });
+
+            return !!eventMatches.length;
+        }
     };
 
     /**
@@ -382,7 +422,7 @@
      * @returns {Sandbox}
      */
     Sandbox.prototype.bind = function (event, callback) {
-        if (this.is('listen:' + event)) {
+        if (this.is('listen', event)) {
             // Adds module name as namespace
             EventManager.bind(event + '.' + this.descriptor.name, callback);
         }
@@ -399,7 +439,7 @@
      * @returns {Sandbox}
      */
     Sandbox.prototype.unbind = function (event, callback) {
-        if (this.is('listen:' + event)) {
+        if (this.is('listen', event)) {
             // Adds module name as namespace
             EventManager.unbind(event + '.' + this.descriptor.name, callback);
         }
@@ -416,8 +456,8 @@
      * @returns {Sandbox}
      */
     Sandbox.prototype.trigger = function (event, data) {
-        if (this.is('trigger:' + event)) {
-            EventManager.trigger(event, data || {});
+        if (this.is('trigger', event)) {
+            EventManager.trigger(event, data);
         }
 
         return this;
@@ -432,7 +472,7 @@
      * @returns {Sandbox}
      */
     Sandbox.prototype.hook = function (event, hookFunction) {
-        if (this.is('hook:' + event)) {
+        if (this.is('hook', event)) {
             EventManager.hook(event, hookFunction);
         }
 
@@ -447,7 +487,7 @@
      * @returns {Sandbox}
      */
     Sandbox.prototype.unhook = function (event) {
-        if (this.is('hook:' + event)) {
+        if (this.is('hook', event)) {
             EventManager.unhook(event);
         }
 
@@ -485,6 +525,10 @@
      */
     Sandbox.prototype.getTemplate = function (templateSelector) {
         return Core.getTemplate(this.descriptor.name, templateSelector);
+    };
+
+    Sandbox.prototype.getAcl = function(eventType) {
+        return this.descriptor.acl[eventType];
     };
 
     // exports
@@ -591,26 +635,4 @@
         }
     };
 }
-})(/**
- *
- * @see articles:
- *
- * Andrew Dupont (Gowalla, Prototype.js, S2)
- * 1. Maintainable JavaScript
- *    http://channel9.msdn.com/Events/MIX/MIX11/EXT23
- *
- * Nicholas Zakas (Yahoo!, YUI, YUI Test)
- * 2. Writing Maintainable JavaScript
- *    http://www.yuiblog.com/blog/2007/05/25/video-zakas/
- * Slides:
- *    New: http://www.slideshare.net/nzakas/maintainable-javascript-2011
- *    Old: http://www.slideshare.net/nzakas/maintainable-javascript-1071179
- *
- * 3. Scalable JavaScript Application Architecture
- *    http://developer.yahoo.com/yui/theater/video.php?v=zakas-architecture
- */
-
-function main(require, exports, module) {
-    "use strict";
-    require('Core').init();
-})
+})(undefined)

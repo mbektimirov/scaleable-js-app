@@ -8,6 +8,7 @@
         "descriptor": "./app/descriptors/",
         "module": "./app/modules/",
         "locale": "./app/locales/",
-        "template": "./app/templates/"
+        "template": "./app/templates/",
+        "interface": "./app/interfaces/"
     }
 }
