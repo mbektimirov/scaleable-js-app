@@ -1,0 +1,52 @@
+#!/bin/bash
+
+name=$1
+
+module_template="
+function $name(sandboxed, exports, module) {\n
+	\t\"use strict\";\n
+\n
+	\treturn {\n
+		\t\tinit: function(sandbox) {\n
+\n		
+		\t\t},\n
+\n
+		\t\tdestroy: function() {\n
+\n
+		\t\t}\n
+	\t};\n
+}"
+
+descriptor_template="
+{\n
+	\t\"name\": \"$name\",\n
+\n
+	\t\"acl\": {\n
+		\t\t\"listen\": [],\n
+		\t\t\"trigger\": [],\n
+		\t\t\"hook\": []\n
+	\t},\n
+\n
+	\t\"resources\": { }\n
+}
+"
+
+locale_template="
+{\n
+    \t\"some_localized_text_stub\": {\n
+        \t\t\"en\": \"this is an english text stub, remove it\",\n
+        \t\t\"ru\": \"пример локализованной строки\"\n
+    \t}\n
+}
+"
+
+echo -e $module_template > app/modules/$name.js
+echo -e $descriptor_template > app/descriptors/$name.json
+echo -e $locale_template > app/locales/$name.json
+touch app/templates/$name.html
+
+echo -e "Created:
+	app/modules/$name.js
+	app/descriptors/$name.json
+	app/templates/$name.html
+	app/locales/$name.json"
